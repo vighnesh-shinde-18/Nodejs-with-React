@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const port = 3000;
+const port = 8000;
 require('dotenv').config();
 require('./db');
 
@@ -16,45 +16,34 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(cookieParser()); 
 
-// Middleware for token authentication
 function authenticateToken(req, res, next) {
-    const token = req.headers.authorization?.split(" ")[1];
+    const accessToken = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-        // return res.status(401).json({ message: "Auth error: No token provided" });
-        const error = new Error('token not found ')
-        next(error)
+    if (!accessToken) {
+        return res.status(401).json({ message: "Auth error: No token provided" });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
-        if (req.body.id && decoded.id !== req.body.id) {
-            // return res.status(401).json({ message: "Invalid Token" });
-            const error = new Error('Invalid Token')
-            next(error);
-        }
-
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET_KEY);
         req.user = decoded; // Attach the decoded token (including id) to req.user
         next();
     } catch (err) {
-        // return res.status(401).json({ message: "Invalid token" });
-        next(err)
+        return res.status(403).json({ message: "Invalid token" });
     }
 }
 
 // Routes
 app.get('/', (req, res) => {
     console.log('API is working');
-    res.send("Hi, I am working!");
+    res.json({message: "Hi, I am working!"});
 });
+
 
 app.post('/register', async (req, res) => {
     try {
         const { name, password, email, age, gender } = req.body;
 
         if (!name || !email || !password || !age || !gender) {
-            const error = new Error("")
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -67,68 +56,48 @@ app.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newUser = new user({
-            name,
-            password: hashedPassword,
-            email,
-            age,
-            gender
-        });
-
+        const newUser = new user({ name, password: hashedPassword, email, age, gender });
         await newUser.save();
+
         res.status(201).json({ message: 'New user successfully created' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-app.post('/login', async (req, res) => {
+
+app.post('/login', async (req, res, next) => {
     try {
         const { email, password } = req.body;
         const existingUser = await user.findOne({ email });
 
         if (!existingUser) {
-            // return res.status(403).json({ message: 'Invalid username' });
-            const error = new Error('Invalid username')
-            next(error)
+            return res.status(403).json({ message: 'Invalid username' });
         }
 
         const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
         if (!isPasswordCorrect) {
-            // return res.status(403).json({ message: 'Invalid password' });
-            const error = new Error('Invalid password')
-            next(error)
+            return res.status(403).json({ message: 'Invalid password' });
         }
 
-        const accessToken = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET_KEY, {
-            expiresIn: '40s'
-        });
-    
-        const refreshToken = jwt.sign({ id: existingUser._id }, process.env.JWT_REFRESH_SECRET_KEY)
+        const accessToken = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET_KEY, { expiresIn: '40s' });
+        const refreshToken = jwt.sign({ id: existingUser._id }, process.env.JWT_REFRESH_SECRET_KEY);
 
         existingUser.refreshToken = refreshToken;
         await existingUser.save();
-        res.cookie("refreshToken", refreshToken, { httpOnly: true, path: '/refreshToken' });
 
-        res.cookie('refreshToken', refreshToken, { 
-            httpOnly: true, 
-            path: '/refreshToken', 
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            path: '/refreshToken',
             secure: false, // Set to true if using HTTPS
             sameSite: 'strict',
         });
 
-        res.status(200).json({
-            accessToken,
-            refreshToken,
-            message: "User logged in successfully"
-        });
-
+        res.status(200).json({ accessToken, refreshToken, message: 'User logged in successfully' });
     } catch (err) {
-        // res.status(500).json({ message: err.message });
-        next(err)
+        next(err);
     }
 });
-
 app.get('/getmyprofile', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id; // Use the id from req.user set in authenticateToken
@@ -194,7 +163,14 @@ app.use((err, req, res, next) => {
 });
 
 
-
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
+
+
+
+
+
+
+// Error handling middleware
+
