@@ -1,0 +1,27 @@
+const http = require('http');
+const port = 8000;
+
+const server = http.createServer((req, res) => {
+
+    if (req.url == '/' || req.url == '/home') {
+        res.setHeader('content-Type', 'text/html');
+        res.write('<h1 style="color:red">Home Page</h1>')
+        res.statusCode = 200;
+        res.end()
+    }
+    else if (req.url == '/about') {
+        res.statusCode = 200;
+        res.setHeader('content-Type', 'text/html');
+        res.write('<h1 >About Page</h1>')
+        res.end()
+    }
+    else{
+        res.statusCode = 404;
+        res.write('404 Not found')
+        res.end();
+    }
+})
+
+server.listen(port, () => {
+    console.log(`server running on port ${port}`);
+})

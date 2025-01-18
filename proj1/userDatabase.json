@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Vighnesh Shinde",
+    "email": "vighneshshinde80@gmail.com",
+    "age": 21,
+    "address": "PCMC, Pune"
+  },
+  {
+    "id": 2,
+    "name": "Tanish Shinde",
+    "email": "tanishshinde80@gmail.com",
+    "age": 18,
+    "address": "nsp,palghar"
+  },
+  {
+    "name": "mayuresh jadhav",
+    "email": "mj80@gmail.com",
+    "age": 13,
+    "address": "mumbai",
+    "id": 1736849823951
+  }
+]
