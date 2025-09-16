@@ -15,6 +15,11 @@ router.post('/register', async (req, res) => {
         const newUser = new user({
             name, email, password
         });
+
+        const userExists = await user.findOne({ email });
+        if (userExists) {
+            return res.status(400)
+        }
         await newUser.save();
         res.status(201).send({ message: "user created succesfully" })
 
@@ -33,7 +38,7 @@ router.post('/login', async (req, res) => {
             throw new Error("user not found")
         }
         const isMatch = await bcrypt.compare(password, reqUser.password)
-       
+
 
         if (!isMatch) {
             throw new Error('unable to login, invalid credential')

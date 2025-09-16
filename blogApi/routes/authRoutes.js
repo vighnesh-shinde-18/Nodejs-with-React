@@ -20,13 +20,14 @@ const sendOTP = async (email, otp) => {
     });
 };
 
-// Register API
 router.post('/register', async (req, res) => {
     try {
         const { email, password } = req.body;
 
         const userExists = await User.findOne({ email });
-        if (userExists) return res.status(400).json({ message: "User already exists" });
+        if (userExists) {
+            return res.status(400).json({ message: "User already exists" });
+        }
 
         const newUser = new User({ email, password });
         await newUser.save();
@@ -36,32 +37,26 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Login with OTP
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log("🔹 Login request received:", { email, password });
 
         const user = await User.findOne({ email });
 
-        if (!user) return res.status(400).json({ message: "User not found" });
+        if (!user){
+             return res.status(400).json({ message: "User not found" });
+            }
 
-        console.log("✅ User found:", user);
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            console.log("❌ Password does not match");
             return res.status(400).json({ message: "Invalid password" });
         }
 
-        console.log("✅ Password matched!");
-        // Generate OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         user.otp = otp;
-        user.otpExpiry = Date.now() + 10 * 60 * 1000; // OTP valid for 10 mins
+        user.otpExpiry = Date.now() + 10 * 60 * 1000; 
         await user.save();
-
-        // Send OTP
 
         console.log('OTP generate succesfully ')
         await sendOTP(email, otp);
@@ -73,7 +68,6 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Verify OTP & Generate Token
 router.post('/verify-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;

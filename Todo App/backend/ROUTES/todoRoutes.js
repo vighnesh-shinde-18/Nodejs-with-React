@@ -13,7 +13,6 @@ router.get('/test', (req, res) => {
 router.post('/createtodo', async (req, res) => {
 
     try {
-
         const { title, description } = req.body;
         const newTodo = new todo({
             title: title,
@@ -43,7 +42,6 @@ router.get('/getalltodos', async (req, res) => {
     try {
 
         const todos = await todo.find();
-
 
         if (todos.length === 0) {
             return res.status(200).json({

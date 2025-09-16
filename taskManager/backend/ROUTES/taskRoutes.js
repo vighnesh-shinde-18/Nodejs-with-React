@@ -95,11 +95,33 @@ router.delete('/delete/:id', auth, async (req, res) => {
       owner: owner
     });
 
-    res.send("deleted successfully")
+    res.send("deleted successfully", deletedTask)
   }
   catch (error) {
     res.json({ message: error })
   }
 }
 )
+
+router.get('/deletealltasks', auth, async (req, res) => {
+  try {
+    const owner = req.user._id;
+    const tasks = await task.find({ owner: owner });
+
+    for (let i = 0; i < tasks.length; i++) {
+      await task.findOneAndDelete({
+        _id: tasks[i]._id,
+        owner: owner
+      });
+    }
+
+
+    res.send("all tasks deleted successfully")
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
 module.exports = router;
